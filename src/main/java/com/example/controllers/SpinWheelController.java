@@ -46,7 +46,7 @@ public class SpinWheelController extends VBox {
         int numSegments = rewards.length;
         double angleStep = 360.0 / numSegments;
 
-        // Хүрдийг салбар хэсгүүдэд хуваан өнгө, тексттэй зурах
+        // Хүрдийг зурах
         for (int i = 0; i < numSegments; i++) {
             Arc arc = new Arc(radius, radius, radius, radius, i * angleStep, angleStep);
             arc.setType(ArcType.ROUND);
@@ -54,20 +54,24 @@ public class SpinWheelController extends VBox {
             arc.setStroke(Color.WHITE);
             arc.setStrokeWidth(2);
 
-            double angleRad = Math.toRadians((i + 0.5) * angleStep);
-            double textX = radius + (radius * 0.6) * Math.cos(angleRad) - 20;
-            double textY = radius - (radius * 0.6) * Math.sin(angleRad) + 5;
+            // Текстийн байршил ба эргэлтийн өнцөг
+            double midAngle = (i + 0.5) * angleStep;
+            double angleRad = Math.toRadians(midAngle);
 
             Text label = new Text(rewards[i]);
             label.setFont(Font.font("Arial", FontWeight.BOLD, 12));
             label.setFill(Color.WHITE);
-            label.setX(textX);
-            label.setY(textY);
+
+            // Текстийг төвөөс радиус дагуу байрлуулж, өнцгөөр нь эргүүлэх
+            double textRadius = radius * 0.6;
+            label.setX(radius + textRadius * Math.cos(angleRad) - 20);
+            label.setY(radius - textRadius * Math.sin(angleRad) + 5);
+            label.setRotate(-midAngle); // Текстийг хэвтээ хэлбэртэй уншигдахаар хазайлгах
 
             wheelGroup.getChildren().addAll(arc, label);
         }
 
-        // Заагч сум (Улаан гурвалжин)
+        // Заагч сум (Орой дээрх улаан гурвалжин)
         Polygon pointer = new Polygon();
         pointer.getPoints().addAll(0.0, 0.0, 20.0, 0.0, 10.0, 25.0);
         pointer.setFill(Color.DARKRED);
@@ -95,24 +99,29 @@ public class SpinWheelController extends VBox {
         spinButton.setDisable(true);
 
         Random random = new Random();
-        int randomIndex = random.nextInt(rewards.length);
+        int selectedIndex = random.nextInt(rewards.length);
         double angleStep = 360.0 / rewards.length;
 
-        // Сум яг орой дээрээс (90 градус) зааж байгаа тул өнцгийн тооцооллыг тааруулах
-        double segmentCenterAngle = (randomIndex + 0.5) * angleStep;
-        double targetRotation = (360 * 5) + (90.0 - segmentCenterAngle);
+        // Яг орой дээр зааж байгаа хэсгийг сонгогдсон шагналтай тааруулах
+        double targetSegmentCenter = (selectedIndex + 0.5) * angleStep;
+        double currentRotation = wheelGroup.getRotate();
+
+        // 90 градуст (орой дээр) тухайн хэсгийн төв ирэх эргэлтийн өнцөг
+        double finalAngle = (360 * 5) + (targetSegmentCenter - 90);
 
         RotateTransition rotate = new RotateTransition(Duration.seconds(3.5), wheelGroup);
-        rotate.setByAngle(targetRotation - (wheelGroup.getRotate() % 360));
+        rotate.setByAngle(finalAngle - (currentRotation % 360));
         rotate.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
 
         rotate.setOnFinished(e -> {
             isSpinning = false;
             spinButton.setDisable(false);
-            String reward = rewards[randomIndex];
+
+            // Заагч суман дээр буусан яг тэр шагналыг харуулах
+            String reward = rewards[selectedIndex];
             resultLabel.setText("Шагнал: " + reward);
 
-            // Арын Thread дээр бааз руу хадгалах
+            // Бааз руу хадгалах
             new Thread(() -> {
                 try {
                     if (reward.contains("Амь")) {
