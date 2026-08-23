@@ -2,7 +2,6 @@ package com.example.controllers;
 
 import com.example.database.UserDAO;
 import javafx.animation.RotateTransition;
-import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -97,14 +96,14 @@ public class SpinWheelController extends VBox {
 
         Random random = new Random();
         int randomIndex = random.nextInt(rewards.length);
-        int anglePerSegment = 360 / rewards.length;
+        double angleStep = 360.0 / rewards.length;
 
-        // Эргэлтийн өнцөг тооцоолох
-        double currentAngle = wheelGroup.getRotate();
-        double targetAngle = currentAngle + (360 * 5) + (360 - (randomIndex * anglePerSegment));
+        // Сум яг орой дээрээс (90 градус) зааж байгаа тул өнцгийн тооцооллыг тааруулах
+        double segmentCenterAngle = (randomIndex + 0.5) * angleStep;
+        double targetRotation = (360 * 5) + (90.0 - segmentCenterAngle);
 
         RotateTransition rotate = new RotateTransition(Duration.seconds(3.5), wheelGroup);
-        rotate.setByAngle((360 * 5) + (360 - (randomIndex * anglePerSegment)));
+        rotate.setByAngle(targetRotation - (wheelGroup.getRotate() % 360));
         rotate.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
 
         rotate.setOnFinished(e -> {
@@ -113,7 +112,7 @@ public class SpinWheelController extends VBox {
             String reward = rewards[randomIndex];
             resultLabel.setText("Шагнал: " + reward);
 
-            // Арын Thread дээр бааз руу хадгалах (Дэлгэц гацахгүй)
+            // Арын Thread дээр бааз руу хадгалах
             new Thread(() -> {
                 try {
                     if (reward.contains("Амь")) {
