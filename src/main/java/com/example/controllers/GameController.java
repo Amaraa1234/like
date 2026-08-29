@@ -1,6 +1,6 @@
 package com.example.controllers;
 
-import javafx.animation.RotateTransition;
+import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -10,7 +10,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.ArcType;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 
 import java.util.Random;
 
@@ -43,14 +42,19 @@ public class GameController {
     @FXML
     private Button optionD;
 
+    @FXML
+    private Button spinButton; // fx:id="spinButton" гэж FXML-д нэмнэ үү
+
     private int score = 0;
     private int rank = 1;
     private boolean isNewUser = true;
     private String currentUsername = "";
     private Stage stage;
 
+    private boolean isSpinning = false; // Хүрд эргэж байгаа эсэхийг хянана
+
     // 10 асуулт
-    private String[] questions = {
+    private final String[] questions = {
             "Java-г ямар компани бүтээсэн бэ?",
             "Монгол улсын нийслэл аль вэ?",
             "Дэлхийн хамгийн өндөр уул аль вэ?",
@@ -64,7 +68,7 @@ public class GameController {
     };
 
     // Хариултууд
-    private String[][] options = {
+    private final String[][] options = {
             { "Microsoft", "Oracle", "Sun Microsystems", "Google" },
             { "Улаанбаатар", "Дархан", "Эрдэнэт", "Ховд" },
             { "Эверест", "К2", "Канченжанга", "Лхоцзе" },
@@ -79,7 +83,7 @@ public class GameController {
     };
 
     // Зөв хариултын индексүүд
-    private int[] correctAnswers = { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    private final int[] correctAnswers = { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     private int currentQuestionIndex = 0;
     private boolean isAnswered = false;
@@ -93,27 +97,18 @@ public class GameController {
             updateScoreAndRank();
         }
         loadQuestion(0);
-        optionA.setDisable(false);
-        optionB.setDisable(false);
-        optionC.setDisable(false);
-        optionD.setDisable(false);
+        disableAnswerButtons(true); // Эхэндээ хүрд эргүүлэх хүртэл хариулах боломжгүй
     }
 
-    public void setUsername(String username) { // ← ЭНЭ МЕТОД
+    public void setUsername(String username) {
         this.currentUsername = username;
         kingLabel.setText("👑 " + username + " - Таны зэрэглэл");
     }
 
-    /**
-     * Stage-г тохируулах
-     */
     public void setStage(Stage stage) {
         this.stage = stage;
     }
 
-    /**
-     * Тоглоомыг эхлүүлэх
-     */
     public void initGame() {
         score = 0;
         isNewUser = false;
@@ -121,6 +116,8 @@ public class GameController {
         loadQuestion(0);
         questionArea.setText("🎯 Хүрд эргүүлээд асуулт сонгоно уу!");
         resetButtons();
+        disableAnswerButtons(true);
+        currentAngle = 0;
         drawWheel();
     }
 
@@ -135,10 +132,11 @@ public class GameController {
         double centerY = height / 2;
         double radius = Math.min(width, height) / 2 - 10;
 
-        int sections = 10; // 1-ээс 10 хүртэл
+        gc.clearRect(0, 0, width, height); // Өмнөх зургийг цэвэрлэх
+
+        int sections = 10;
         String[] labels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
 
-        // 10 өөр өнгө
         Color[] colors = {
                 Color.rgb(255, 107, 107),
                 Color.rgb(255, 193, 7),
@@ -154,7 +152,6 @@ public class GameController {
 
         double angleStep = 360.0 / sections;
 
-        // Хүрдийг эргүүлсэн өнцгөөр зурах
         for (int i = 0; i < sections; i++) {
             double startAngle = i * angleStep + currentAngle;
             double endAngle = startAngle + angleStep;
@@ -166,7 +163,6 @@ public class GameController {
                     startAngle, endAngle - startAngle,
                     ArcType.ROUND);
 
-            // Текст зурах
             gc.setFill(Color.WHITE);
             gc.setFont(javafx.scene.text.Font.font(20));
             double midAngle = Math.toRadians(startAngle + angleStep / 2);
@@ -175,24 +171,16 @@ public class GameController {
             gc.fillText(labels[i], textX - 10, textY + 8);
         }
 
-        // Гадна тойрог
         gc.setStroke(Color.BLACK);
         gc.setLineWidth(2);
         gc.strokeOval(centerX - radius, centerY - radius, radius * 2, radius * 2);
 
-        // Дотор тойрог
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(2);
-        gc.strokeOval(centerX - 5, centerY - 5, 10, 10);
-
-        // Төв цэг
         gc.setFill(Color.WHITE);
         gc.fillOval(centerX - 15, centerY - 15, 30, 30);
         gc.setStroke(Color.BLACK);
         gc.setLineWidth(2);
         gc.strokeOval(centerX - 15, centerY - 15, 30, 30);
 
-        // Сум (дээд талд)
         gc.setFill(Color.rgb(255, 0, 0));
         double[] xPoints = { centerX - 15, centerX + 15, centerX };
         double[] yPoints = { centerY - radius - 5, centerY - radius - 5, centerY - radius - 20 };
@@ -200,33 +188,61 @@ public class GameController {
     }
 
     /**
-     * Хүрд эргүүлэх анимейшн
+     * Хүрд эргүүлэх анимейшн — ЗӨВХӨН drawWheel-ээр дүрсэлнэ.
+     * Node.setRotate ашиглахгүй тул анхны кодод байсан давхар эргэлт үүсэхгүй.
      */
     @FXML
     private void spinWheel() {
+        if (isSpinning) {
+            return; // Эргэж байх үед дахин дарахаас сэргийлнэ
+        }
+        isSpinning = true;
+        if (spinButton != null) {
+            spinButton.setDisable(true);
+        }
+
         Random rand = new Random();
-        int randomNumber = rand.nextInt(10) + 1; // 1-ээс 10 хүртэлх тоо
+        int randomNumber = rand.nextInt(10) + 1;
         int questionIndex = randomNumber - 1;
 
-        // Хүрдийг эргүүлэх анимейшн
-        RotateTransition rotate = new RotateTransition(Duration.millis(1500), wheelCanvas);
-        double targetAngle = 360 * 3 + (randomNumber - 1) * 36; // 3 бүтэн эргэлт + хүссэн хэсэг
-        rotate.setByAngle(targetAngle);
-        rotate.setCycleCount(1);
+        int startAngle = currentAngle;
+        int totalRotation = 360 * 3 + (randomNumber - 1) * 36; // 3 бүтэн эргэлт + хүссэн хэсэг
+        int endAngle = (startAngle + totalRotation) % 360;
 
-        // Анимейшн дууссаны дараа
-        rotate.setOnFinished(e -> {
-            currentAngle = (currentAngle + (int) targetAngle) % 360;
-            drawWheel();
+        long durationMs = 1500;
+        long startTime = System.currentTimeMillis();
 
-            // Сонгогдсон асуултыг харуулах
-            loadQuestion(questionIndex);
-            isAnswered = false;
-            resetButtons();
-            questionArea.setText("🎯 " + questions[questionIndex] + " (Асуулт №" + randomNumber + ")");
-        });
+        AnimationTimer timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                double progress = Math.min(1.0, elapsed / (double) durationMs);
+                double eased = 1 - Math.pow(1 - progress, 3); // Ease-out: сүүлдээ удаашрана
 
-        rotate.play();
+                currentAngle = (int) (startAngle + totalRotation * eased) % 360;
+                drawWheel();
+
+                if (progress >= 1.0) {
+                    stop();
+                    currentAngle = endAngle;
+                    drawWheel();
+                    onSpinFinished(questionIndex, randomNumber);
+                }
+            }
+        };
+        timer.start();
+    }
+
+    private void onSpinFinished(int questionIndex, int randomNumber) {
+        isSpinning = false;
+        if (spinButton != null) {
+            spinButton.setDisable(false);
+        }
+        loadQuestion(questionIndex);
+        isAnswered = false;
+        resetButtons();
+        disableAnswerButtons(false);
+        questionArea.setText("🎯 " + questions[questionIndex] + " (Асуулт №" + randomNumber + ")");
     }
 
     private void loadQuestion(int index) {
@@ -249,7 +265,7 @@ public class GameController {
         }
 
         Button clicked = (Button) event.getSource();
-        int selectedIndex = -1;
+        int selectedIndex;
 
         if (clicked == optionA)
             selectedIndex = 0;
@@ -259,19 +275,15 @@ public class GameController {
             selectedIndex = 2;
         else if (clicked == optionD)
             selectedIndex = 3;
-
-        if (selectedIndex == -1)
+        else
             return;
-
-        // Өмнөх оноог хадгалах
-        int oldScore = score;
 
         if (selectedIndex == correctAnswers[currentQuestionIndex]) {
             score++;
             questionArea.setText("✅ Зөв хариулт! +1 оноо\n" + questions[currentQuestionIndex]);
             showCorrectAnswer(selectedIndex);
         } else {
-            score--;
+            score = Math.max(0, score - 1); // Оноо 0-ээс доош орохгүй
             questionArea.setText("❌ Буруу хариулт! -1 оноо\nЗөв хариулт: "
                     + options[currentQuestionIndex][correctAnswers[currentQuestionIndex]]);
             showWrongAnswer(selectedIndex);
@@ -280,38 +292,25 @@ public class GameController {
         isAnswered = true;
         isNewUser = false;
         updateScoreAndRank();
+        disableAnswerButtons(true); // Дараагийн spin хүртэл хариулах боломжгүй
     }
 
     private void showCorrectAnswer(int selectedIndex) {
         Button[] buttons = { optionA, optionB, optionC, optionD };
-        for (int i = 0; i < buttons.length; i++) {
-            if (i == selectedIndex) {
-                buttons[i].setStyle(
-                        "-fx-background-color: #4caf50; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #2e7d32; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
-            }
-        }
+        buttons[selectedIndex].getStyleClass().add("option-correct");
     }
 
     private void showWrongAnswer(int selectedIndex) {
         Button[] buttons = { optionA, optionB, optionC, optionD };
         int correctIndex = correctAnswers[currentQuestionIndex];
 
-        for (int i = 0; i < buttons.length; i++) {
-            if (i == selectedIndex) {
-                buttons[i].setStyle(
-                        "-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #c62828; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
-            } else if (i == correctIndex) {
-                buttons[i].setStyle(
-                        "-fx-background-color: #4caf50; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #2e7d32; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
-            }
-        }
+        buttons[selectedIndex].getStyleClass().add("option-wrong");
+        buttons[correctIndex].getStyleClass().add("option-correct");
     }
 
     private void updateScoreAndRank() {
-        // Оноо гэж нэрлэх
         scoreLabel.setText("⭐ Оноо: " + score);
 
-        // Ранкын тооцоо
         if (score >= 10)
             rank = 1;
         else if (score >= 7)
@@ -323,7 +322,6 @@ public class GameController {
         else
             rank = 5;
 
-        // Ранк гэдгийг Оноо гэж солих
         rankLabel.setText("🏆 Ранк: " + rank);
 
         String rankName;
@@ -351,14 +349,17 @@ public class GameController {
     }
 
     private void resetButtons() {
-        optionA.setStyle(
-                "-fx-background-color: #c8e6c9; -fx-text-fill: #1b5e20; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #388e3c; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
-        optionB.setStyle(
-                "-fx-background-color: #fff9c4; -fx-text-fill: #f57f17; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #f9a825; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
-        optionC.setStyle(
-                "-fx-background-color: #b3e5fc; -fx-text-fill: #01579b; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #0288d1; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
-        optionD.setStyle(
-                "-fx-background-color: #ffccbc; -fx-text-fill: #bf360c; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #d84315; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
+        Button[] buttons = { optionA, optionB, optionC, optionD };
+        for (Button b : buttons) {
+            b.getStyleClass().removeAll("option-correct", "option-wrong");
+        }
+    }
+
+    private void disableAnswerButtons(boolean disable) {
+        optionA.setDisable(disable);
+        optionB.setDisable(disable);
+        optionC.setDisable(disable);
+        optionD.setDisable(disable);
     }
 
     @FXML
@@ -377,5 +378,4 @@ public class GameController {
                 + "🏆 Ранк нь онооноос хамаарна.\n"
                 + "👑 Өндөр зэрэглэлд хүрэхийг хүсье!");
     }
-
 }
