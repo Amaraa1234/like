@@ -6,12 +6,19 @@ public class User {
     private String passwordHash;
     private int score;
 
-    // Энэ constructor-г нэмэх (ID, Username, PasswordHash, Score)
+    // Өгөгдлийн сангаас уншихад ашиглах байгуулагч
     public User(int id, String username, String passwordHash, int score) {
         this.id = id;
         this.username = username;
         this.passwordHash = passwordHash;
         this.score = score;
+    }
+
+    // Шинээр бүртгэх үед ID болон Score үүсээгүй байхад ашиглах байгуулагч
+    public User(String username, String passwordHash) {
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.score = 0;
     }
 
     // Getters and Setters
@@ -45,5 +52,14 @@ public class User {
 
     public void setScore(int score) {
         this.score = score;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", score=" + score +
+                '}';
     }
 }

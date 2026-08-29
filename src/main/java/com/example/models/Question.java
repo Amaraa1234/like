@@ -1,17 +1,16 @@
 package com.example.models;
 
 public class Question {
-    private int id;
-    private String text;
-    private String optionA;
-    private String optionB;
-    private String optionC;
-    private String optionD;
-    private char correctOption;
+    private final int id;
+    private final String text;
+    private final String optionA;
+    private final String optionB;
+    private final String optionC;
+    private final String optionD;
+    private final Option correctOption;
 
-    // 7 Параметртэй Constructor (Асуултын сангаас уншихад зориулав)
     public Question(int id, String text, String optionA, String optionB, String optionC, String optionD,
-            char correctOption) {
+            Option correctOption) {
         this.id = id;
         this.text = text;
         this.optionA = optionA;
@@ -21,7 +20,6 @@ public class Question {
         this.correctOption = correctOption;
     }
 
-    // Getters
     public int getId() {
         return id;
     }
@@ -46,7 +44,32 @@ public class Question {
         return optionD;
     }
 
-    public char getCorrectOption() {
+    public Option getCorrectOption() {
+        return correctOption;
+    }
+
+    // GameController-ийн Record маягийн бичиглэлтэй тааруулах туслах аргууд
+    public String text() {
+        return text;
+    }
+
+    public String optionA() {
+        return optionA;
+    }
+
+    public String optionB() {
+        return optionB;
+    }
+
+    public String optionC() {
+        return optionC;
+    }
+
+    public String optionD() {
+        return optionD;
+    }
+
+    public Option correctOption() {
         return correctOption;
     }
 }

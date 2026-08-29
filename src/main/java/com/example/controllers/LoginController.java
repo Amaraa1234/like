@@ -1,17 +1,13 @@
 package com.example.controllers;
 
+import com.example.database.UserDAO;
+import com.example.models.User;
+import com.example.utils.SceneManager;
+import com.example.utils.UserSession;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.stage.Stage;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class LoginController {
 
@@ -24,15 +20,7 @@ public class LoginController {
     @FXML
     private Label messageLabel;
 
-    private Stage stage;
-
-    // Санах ойд хадгалагдах хэрэглэгчийн сан (username -> password).
-    // ⚠️ Программ дахин асаахад устана. Бодит систем бол файл/DB ашиглана.
-    private static final Map<String, String> registeredUsers = new HashMap<>();
-
-    public void setStage(Stage stage) {
-        this.stage = stage;
-    }
+    private final UserDAO userDAO = new UserDAO();
 
     @FXML
     private void handleLogin() {
@@ -44,17 +32,19 @@ public class LoginController {
             return;
         }
 
-        if (!registeredUsers.containsKey(username)) {
-            showError("❌ Энэ хэрэглэгч бүртгэлгүй байна. Эхлээд бүртгүүлнэ үү!");
-            return;
-        }
+        // 1. Өгөгдлийн сангаас хэрэглэгчийг шалгаж нэвтрүүлнэ (BCrypt шалгалт DAO дотор
+        // хийгдэнэ)
+        User user = userDAO.login(username, password);
 
-        if (!registeredUsers.get(username).equals(password)) {
-            showError("❌ Нууц үг буруу байна!");
-            return;
-        }
+        if (user != null) {
+            // 2. Нэвтэрсэн хэрэглэгчийг глобал Сессэд хадгална
+            UserSession.getInstance().setCurrentUser(user);
 
-        loadGameScene(username);
+            // 3. SceneManager-ээр Тоглоомын дэлгэц рүү шилжинэ
+            SceneManager.switchScene("/game.fxml", "🎡 Асуултын Хүрд - " + user.getUsername());
+        } else {
+            showError("❌ Хэрэглэгчийн нэр эсвэл нууц үг буруу байна!");
+        }
     }
 
     @FXML
@@ -77,13 +67,15 @@ public class LoginController {
             return;
         }
 
-        if (registeredUsers.containsKey(username)) {
-            showError("⚠️ Энэ хэрэглэгчийн нэр аль хэдийн бүртгэгдсэн байна!");
-            return;
-        }
+        // Өгөгдлийн санд шинэ хэрэглэгчийг хадгалах
+        boolean isRegistered = userDAO.register(username, password);
 
-        registeredUsers.put(username, password);
-        showSuccess("✅ Бүртгэл амжилттай! Нэвтрэх товч дарна уу.");
+        if (isRegistered) {
+            showSuccess("✅ Бүртгэл амжилттай! Нэвтрэх товч дарна уу.");
+            passwordField.clear();
+        } else {
+            showError("⚠️ Энэ хэрэглэгчийн нэр аль хэдийн бүртгэгдсэн эсвэл баазын алдаа гарлаа!");
+        }
     }
 
     private void showError(String text) {
@@ -100,35 +92,5 @@ public class LoginController {
             messageLabel.getStyleClass().add("success");
         }
         messageLabel.setText(text);
-    }
-
-    /**
-     * Тоглоомын дэлгэц рүү шилжих
-     */
-    private void loadGameScene(String username) {
-        if (stage == null) {
-            showError("❌ Дотоод алдаа: Stage тохируулагдаагүй байна.");
-            return;
-        }
-
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/game.fxml"));
-            Parent root = loader.load();
-
-            GameController controller = loader.getController();
-
-            controller.setUsername(username);
-            controller.setStage(stage);
-            controller.initGame();
-
-            Scene scene = new Scene(root, 900, 750);
-            stage.setScene(scene);
-            stage.setTitle("🎡 Асуултын Хүрд - " + username);
-            stage.show();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            showError("❌ Тоглоомын дэлгэц ачааллаж чадсангүй!");
-        }
     }
 }
