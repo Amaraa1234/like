@@ -96,7 +96,9 @@ public class LoginController {
             GameController controller = loader.getController();
             controller.setUser(user);
             controller.setStage(stage);
-            // ❌ ЭНД initGame() ДУУДАХГҮЙ! setUser() дотор автоматаар дуудагдана
+            // ✅ ЭНД НЭМЭХ
+            controller.initGame(); // <-- ЭНЭ МӨР НЭМЭХ
+
             stage.setScene(new Scene(root, 900, 700));
             stage.setTitle("🎡 Асуултын Хүрд");
             stage.show();
@@ -104,4 +106,5 @@ public class LoginController {
             e.printStackTrace();
         }
     }
+
 }

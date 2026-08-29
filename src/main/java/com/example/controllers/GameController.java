@@ -35,31 +35,6 @@ public class GameController {
     @FXML
     private Button optionA, optionB, optionC, optionD;
 
-    @FXML
-    public void initialize() {
-        // initialize-д юу ч хийхгүй
-    }
-
-    @FXML
-    private void logout() {
-        if (stage != null) {
-            stage.close(); // Цонхыг хаах
-        }
-    }
-
-    // Эсвэл тусламжийн цонх нээх
-    @FXML
-    private void openHelp() {
-        try {
-            Stage helpStage = new Stage();
-            helpStage.setTitle("Тусламж");
-            helpStage.setScene(new Scene(new Label("Тоглоомын заавар..."), 300, 200));
-            helpStage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     private Stage stage;
     private User currentUser;
     private List<Question> questions = new ArrayList<>();
@@ -71,6 +46,11 @@ public class GameController {
             Color.rgb(186, 255, 201), Color.rgb(186, 225, 255), Color.rgb(203, 186, 255),
             Color.rgb(255, 186, 255), Color.rgb(204, 204, 204)
     };
+
+    @FXML
+    public void initialize() {
+        // initialize-д юу ч хийхгүй
+    }
 
     public void setUser(User user) {
         this.currentUser = user;
@@ -93,7 +73,6 @@ public class GameController {
     }
 
     private void loadQuestions() {
-        // ✅ ЗАСВАР: DatabaseConnection.getInstance() -> DatabaseConnection
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement stmt = conn.prepareStatement("SELECT * FROM questions LIMIT 8")) {
             ResultSet rs = stmt.executeQuery();
@@ -164,7 +143,6 @@ public class GameController {
 
     private void displayQuestion() {
         questionArea.setText(currentQuestion.getText());
-        // ✅ ЗӨВ: getOptionA(), getOptionB() гэх мэт
         optionA.setText("A. " + currentQuestion.getOptionA());
         optionB.setText("B. " + currentQuestion.getOptionB());
         optionC.setText("C. " + currentQuestion.getOptionC());
@@ -186,7 +164,6 @@ public class GameController {
             newScore = 0;
         currentUser.setScore(newScore);
 
-        // ✅ ЗАСВАР: DatabaseConnection.getInstance() -> DatabaseConnection
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement stmt = conn.prepareStatement("UPDATE users SET score = ? WHERE id = ?")) {
             stmt.setInt(1, newScore);
@@ -200,7 +177,7 @@ public class GameController {
             questionArea.setText("✅ Зөв хариуллаа! +1 оноо");
             clicked.setStyle("-fx-background-color: #2ECC71; -fx-text-fill: white;");
         } else {
-            questionArea.setText("❌ Буруу хариуллаа! -1 оноо. Зөв хариулт: " + currentQuestion.getCorrectOption());
+            questionArea.setText(" Буруу хариуллаа! -1 оноо. Зөв хариулт: " + currentQuestion.getCorrectOption());
             clicked.setStyle("-fx-background-color: #E74C3C; -fx-text-fill: white;");
         }
         disableOptions(true);
@@ -221,7 +198,6 @@ public class GameController {
     }
 
     private int getRank() {
-        // ✅ ЗАСВАР: DatabaseConnection.getInstance() -> DatabaseConnection
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(
                         "SELECT COUNT(*) + 1 as rank_pos FROM users WHERE score > (SELECT score FROM users WHERE id = ?)")) {
@@ -236,7 +212,6 @@ public class GameController {
     }
 
     private void updateKing() {
-        // ✅ ЗАСВАР: DatabaseConnection.getInstance() -> DatabaseConnection
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(
                         "SELECT username, score FROM users ORDER BY score DESC LIMIT 1")) {
@@ -245,9 +220,11 @@ public class GameController {
                 String kingName = rs.getString("username");
                 int kingScore = rs.getInt("score");
                 if (kingName.equals(currentUser.getUsername())) {
-                    kingLabel.setText("👑 ТА МОНГОЛЫН ХААН! (Оноо: " + kingScore + ")");
+                    kingLabel.setText(" ТА МОНГОЛЫН ХААН! (Оноо: " + kingScore + ")");
+                    kingLabel.setStyle("-fx-text-fill: gold; -fx-font-size: 18px; -fx-font-weight: bold;");
                 } else {
-                    kingLabel.setText("👑 Хаан: " + kingName + " (Оноо: " + kingScore + ")");
+                    kingLabel.setText(" Хаан: " + kingName + " (Оноо: " + kingScore + ")");
+                    kingLabel.setStyle("-fx-text-fill: #FFD700; -fx-font-size: 16px;");
                 }
             }
         } catch (Exception e) {
@@ -267,5 +244,24 @@ public class GameController {
         optionB.setStyle("");
         optionC.setStyle("");
         optionD.setStyle("");
+    }
+
+    @FXML
+    private void logout() {
+        if (stage != null) {
+            stage.close();
+        }
+    }
+
+    @FXML
+    private void openHelp() {
+        try {
+            Stage helpStage = new Stage();
+            helpStage.setTitle("Тусламж");
+            helpStage.setScene(new Scene(new Label("Тоглоомын заавар..."), 300, 200));
+            helpStage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

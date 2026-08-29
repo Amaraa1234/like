@@ -1,29 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.canvas.Canvas?>
+.pulse-animation:hover {
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-transition: all 0.3s ease;
+}
 
-<AnchorPane xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.controllers.GameController"
-            styleClass="root"
-            stylesheets="@css/style.css">
-    <VBox spacing="15" alignment="CENTER" styleClass="main-panel" layoutX="30" layoutY="30" prefWidth="840" prefHeight="640">
-        <HBox spacing="30" alignment="CENTER">
-            <Label fx:id="scoreLabel" text="⭐ 0" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
-            <Label fx:id="rankLabel" text="🏆 Rank: 1" style="-fx-font-size: 18px;"/>
-            <Label fx:id="kingLabel" text="👑 Хаан: ..." styleClass="king-title"/>
-            <Button text="Дахин эргүүлэх" styleClass="bright-button" onAction="#spinWheel"/>
-        </HBox>
-        <StackPane fx:id="wheelContainer" alignment="CENTER" styleClass="wheel-container">
-            <Canvas fx:id="wheelCanvas" width="350" height="350"/>
-        </StackPane>
-        <TextArea fx:id="questionArea" prefHeight="80" wrapText="true" editable="false" style="-fx-background-radius: 15px; -fx-font-size: 15px;"/>
-        <GridPane hgap="15" vgap="10" alignment="CENTER">
-            <Button fx:id="optionA" text="A. ..." styleClass="option-button" onAction="#handleAnswer" GridPane.columnIndex="0" GridPane.rowIndex="0" prefWidth="350"/>
-            <Button fx:id="optionB" text="B. ..." styleClass="option-button" onAction="#handleAnswer" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="350"/>
-            <Button fx:id="optionC" text="C. ..." styleClass="option-button" onAction="#handleAnswer" GridPane.columnIndex="0" GridPane.rowIndex="1" prefWidth="350"/>
-            <Button fx:id="optionD" text="D. ..." styleClass="option-button" onAction="#handleAnswer" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="350"/>
-        </GridPane>
-    </VBox>
-</AnchorPane>
+/* Эсвэл Java кодоор анимейшн хийх */
+.animated-node {
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+}
