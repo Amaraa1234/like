@@ -1,249 +1,364 @@
 package com.example.controllers;
 
-import com.example.database.DatabaseConnection;
-import com.example.models.Question;
-import com.example.models.User;
 import javafx.animation.RotateTransition;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.ArcType;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Random;
 
 public class GameController {
+
+    @FXML
+    private Label scoreLabel;
+
+    @FXML
+    private Label rankLabel;
+
+    @FXML
+    private Label kingLabel;
+
     @FXML
     private Canvas wheelCanvas;
-    @FXML
-    private StackPane wheelContainer;
-    @FXML
-    private Label scoreLabel, rankLabel, kingLabel;
+
     @FXML
     private TextArea questionArea;
-    @FXML
-    private Button optionA, optionB, optionC, optionD;
 
+    @FXML
+    private Button optionA;
+
+    @FXML
+    private Button optionB;
+
+    @FXML
+    private Button optionC;
+
+    @FXML
+    private Button optionD;
+
+    private int score = 0;
+    private int rank = 1;
+    private boolean isNewUser = true;
+    private String currentUsername = "";
     private Stage stage;
-    private User currentUser;
-    private List<Question> questions = new ArrayList<>();
-    private int currentAngle = 0;
-    private Question currentQuestion;
-    private final int SECTOR_COUNT = 8;
-    private final Color[] COLORS = {
-            Color.rgb(255, 179, 186), Color.rgb(255, 223, 186), Color.rgb(255, 255, 186),
-            Color.rgb(186, 255, 201), Color.rgb(186, 225, 255), Color.rgb(203, 186, 255),
-            Color.rgb(255, 186, 255), Color.rgb(204, 204, 204)
+
+    // 10 асуулт
+    private String[] questions = {
+            "Java-г ямар компани бүтээсэн бэ?",
+            "Монгол улсын нийслэл аль вэ?",
+            "Дэлхийн хамгийн өндөр уул аль вэ?",
+            "Нарны аймгийн хамгийн том гараг аль вэ?",
+            "Усны химийн томъёо юу вэ?",
+            "Дэлхийн хамгийн том далай аль вэ?",
+            "Монгол улсын төрийн дуулал юу вэ?",
+            "Гэрлийн хурд хэд вэ?",
+            "Компьютерийн үндсэн хэл аль вэ?",
+            "Дэлхийн хамгийн урт гол аль вэ?"
     };
+
+    // Хариултууд
+    private String[][] options = {
+            { "Microsoft", "Oracle", "Sun Microsystems", "Google" },
+            { "Улаанбаатар", "Дархан", "Эрдэнэт", "Ховд" },
+            { "Эверест", "К2", "Канченжанга", "Лхоцзе" },
+            { "Бархасбадь", "Санчир", "Дэлхий", "Сугар" },
+            { "H2O", "CO2", "NaCl", "HCl" },
+            { "Номхон далай", "Атлантын далай", "Энэтхэгийн далай", "Арктикийн далай" },
+            { "Монгол Улсын төрийн дуулал", "Монгол Улсын төрийн сүлд", "Монгол Улсын төрийн далбаа",
+                    "Монгол Улсын төрийн цол" },
+            { "299,792,458 м/с", "300,000,000 м/с", "299,792,458 км/с", "300,000,000 км/с" },
+            { "Machine Code", "Assembly", "C", "Java" },
+            { "Нил мөрөн", "Амазон мөрөн", "Хар мөрөн", "Ганга мөрөн" }
+    };
+
+    // Зөв хариултын индексүүд
+    private int[] correctAnswers = { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    private int currentQuestionIndex = 0;
+    private boolean isAnswered = false;
+    private int currentAngle = 0;
 
     @FXML
     public void initialize() {
-        // initialize-д юу ч хийхгүй
+        drawWheel();
+        if (isNewUser) {
+            score = 0;
+            updateScoreAndRank();
+        }
+        loadQuestion(0);
+        optionA.setDisable(false);
+        optionB.setDisable(false);
+        optionC.setDisable(false);
+        optionD.setDisable(false);
     }
 
-    public void setUser(User user) {
-        this.currentUser = user;
+    public void setUsername(String username) { // ← ЭНЭ МЕТОД
+        this.currentUsername = username;
+        kingLabel.setText("👑 " + username + " - Таны зэрэглэл");
     }
 
+    /**
+     * Stage-г тохируулах
+     */
     public void setStage(Stage stage) {
         this.stage = stage;
     }
 
+    /**
+     * Тоглоомыг эхлүүлэх
+     */
     public void initGame() {
-        if (currentUser == null) {
-            System.out.println("Хэрэглэгч байхгүй байна!");
-            return;
-        }
-        loadQuestions();
-        drawWheel(0);
-        updateUI();
-        disableOptions(true);
-        questionArea.setText("🎯 Эргүүлэх товч дээр дарна уу!");
+        score = 0;
+        isNewUser = false;
+        updateScoreAndRank();
+        loadQuestion(0);
+        questionArea.setText("🎯 Хүрд эргүүлээд асуулт сонгоно уу!");
+        resetButtons();
+        drawWheel();
     }
 
-    private void loadQuestions() {
-        try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement("SELECT * FROM questions LIMIT 8")) {
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                questions.add(new Question(
-                        rs.getInt("id"),
-                        rs.getString("question_text"),
-                        rs.getString("option_a"),
-                        rs.getString("option_b"),
-                        rs.getString("option_c"),
-                        rs.getString("option_d"),
-                        rs.getString("correct_option").charAt(0)));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void drawWheel(int rotateAngle) {
+    /**
+     * Хүрд зурах (1-ээс 10 хүртэлх тоотой)
+     */
+    private void drawWheel() {
         GraphicsContext gc = wheelCanvas.getGraphicsContext2D();
-        double w = wheelCanvas.getWidth(), h = wheelCanvas.getHeight();
-        double cx = w / 2, cy = h / 2, radius = Math.min(w, h) / 2 - 10;
+        double width = wheelCanvas.getWidth();
+        double height = wheelCanvas.getHeight();
+        double centerX = width / 2;
+        double centerY = height / 2;
+        double radius = Math.min(width, height) / 2 - 10;
 
-        gc.clearRect(0, 0, w, h);
-        double angleStep = 360.0 / SECTOR_COUNT;
+        int sections = 10; // 1-ээс 10 хүртэл
+        String[] labels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
 
-        for (int i = 0; i < SECTOR_COUNT; i++) {
-            double startAngle = rotateAngle + i * angleStep;
-            gc.setFill(COLORS[i % COLORS.length]);
-            gc.fillArc(cx - radius, cy - radius, radius * 2, radius * 2, startAngle, angleStep, ArcType.ROUND);
+        // 10 өөр өнгө
+        Color[] colors = {
+                Color.rgb(255, 107, 107),
+                Color.rgb(255, 193, 7),
+                Color.rgb(76, 175, 80),
+                Color.rgb(33, 150, 243),
+                Color.rgb(156, 39, 176),
+                Color.rgb(255, 152, 0),
+                Color.rgb(0, 188, 212),
+                Color.rgb(233, 30, 99),
+                Color.rgb(139, 195, 74),
+                Color.rgb(96, 125, 139)
+        };
 
-            gc.setFill(Color.BLACK);
-            gc.setStroke(Color.WHITE);
-            gc.setLineWidth(2);
-            double mid = Math.toRadians(startAngle + angleStep / 2);
-            double tx = cx + (radius * 0.6) * Math.cos(mid);
-            double ty = cy + (radius * 0.6) * Math.sin(mid);
-            gc.fillText(String.valueOf(i + 1), tx - 5, ty + 5);
+        double angleStep = 360.0 / sections;
+
+        // Хүрдийг эргүүлсэн өнцгөөр зурах
+        for (int i = 0; i < sections; i++) {
+            double startAngle = i * angleStep + currentAngle;
+            double endAngle = startAngle + angleStep;
+
+            gc.setFill(colors[i % colors.length]);
+            gc.fillArc(
+                    centerX - radius, centerY - radius,
+                    radius * 2, radius * 2,
+                    startAngle, endAngle - startAngle,
+                    ArcType.ROUND);
+
+            // Текст зурах
+            gc.setFill(Color.WHITE);
+            gc.setFont(javafx.scene.text.Font.font(20));
+            double midAngle = Math.toRadians(startAngle + angleStep / 2);
+            double textX = centerX + radius * 0.65 * Math.cos(midAngle);
+            double textY = centerY + radius * 0.65 * Math.sin(midAngle);
+            gc.fillText(labels[i], textX - 10, textY + 8);
         }
-        gc.setFill(Color.RED);
-        gc.fillPolygon(new double[] { cx - 10, cx + 10, cx }, new double[] { 10, 10, 25 }, 3);
+
+        // Гадна тойрог
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(2);
+        gc.strokeOval(centerX - radius, centerY - radius, radius * 2, radius * 2);
+
+        // Дотор тойрог
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(2);
+        gc.strokeOval(centerX - 5, centerY - 5, 10, 10);
+
+        // Төв цэг
+        gc.setFill(Color.WHITE);
+        gc.fillOval(centerX - 15, centerY - 15, 30, 30);
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(2);
+        gc.strokeOval(centerX - 15, centerY - 15, 30, 30);
+
+        // Сум (дээд талд)
+        gc.setFill(Color.rgb(255, 0, 0));
+        double[] xPoints = { centerX - 15, centerX + 15, centerX };
+        double[] yPoints = { centerY - radius - 5, centerY - radius - 5, centerY - radius - 20 };
+        gc.fillPolygon(xPoints, yPoints, 3);
     }
 
+    /**
+     * Хүрд эргүүлэх анимейшн
+     */
     @FXML
-    public void spinWheel() {
-        if (questions.isEmpty())
-            return;
-        disableOptions(true);
-        questionArea.setText("🌀 Хүрд эргэж байна...");
+    private void spinWheel() {
+        Random rand = new Random();
+        int randomNumber = rand.nextInt(10) + 1; // 1-ээс 10 хүртэлх тоо
+        int questionIndex = randomNumber - 1;
 
-        int randomSpin = 720 + (int) (Math.random() * 1080);
-        int targetAngle = currentAngle + randomSpin;
-        currentAngle = targetAngle % 360;
+        // Хүрдийг эргүүлэх анимейшн
+        RotateTransition rotate = new RotateTransition(Duration.millis(1500), wheelCanvas);
+        double targetAngle = 360 * 3 + (randomNumber - 1) * 36; // 3 бүтэн эргэлт + хүссэн хэсэг
+        rotate.setByAngle(targetAngle);
+        rotate.setCycleCount(1);
 
-        RotateTransition rt = new RotateTransition(Duration.seconds(3), wheelContainer);
-        rt.setByAngle(randomSpin);
-        rt.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
-        rt.setOnFinished(e -> {
-            int normalized = (360 - (currentAngle % 360)) % 360;
-            int sectorIndex = (int) (normalized / (360.0 / SECTOR_COUNT));
-            if (sectorIndex >= SECTOR_COUNT)
-                sectorIndex = 0;
-            currentQuestion = questions.get(sectorIndex);
-            displayQuestion();
+        // Анимейшн дууссаны дараа
+        rotate.setOnFinished(e -> {
+            currentAngle = (currentAngle + (int) targetAngle) % 360;
+            drawWheel();
+
+            // Сонгогдсон асуултыг харуулах
+            loadQuestion(questionIndex);
+            isAnswered = false;
+            resetButtons();
+            questionArea.setText("🎯 " + questions[questionIndex] + " (Асуулт №" + randomNumber + ")");
         });
-        rt.play();
+
+        rotate.play();
     }
 
-    private void displayQuestion() {
-        questionArea.setText(currentQuestion.getText());
-        optionA.setText("A. " + currentQuestion.getOptionA());
-        optionB.setText("B. " + currentQuestion.getOptionB());
-        optionC.setText("C. " + currentQuestion.getOptionC());
-        optionD.setText("D. " + currentQuestion.getOptionD());
-        disableOptions(false);
+    private void loadQuestion(int index) {
+        if (index < questions.length) {
+            currentQuestionIndex = index;
+            questionArea.setText(questions[index]);
+            optionA.setText("A. " + options[index][0]);
+            optionB.setText("B. " + options[index][1]);
+            optionC.setText("C. " + options[index][2]);
+            optionD.setText("D. " + options[index][3]);
+            isAnswered = false;
+        }
     }
 
     @FXML
-    public void handleAnswer(javafx.event.ActionEvent event) {
+    private void handleAnswer(javafx.event.ActionEvent event) {
+        if (isAnswered) {
+            questionArea.setText("⏳ Энэ асуултад хариулсан байна! Хүрд эргүүлээд шинэ асуулт сонго.");
+            return;
+        }
+
         Button clicked = (Button) event.getSource();
-        String selected = clicked.getText().substring(0, 1).toUpperCase();
-        char selectedChar = selected.charAt(0);
+        int selectedIndex = -1;
 
-        boolean correct = selectedChar == currentQuestion.getCorrectOption();
-        int change = correct ? 1 : -1;
+        if (clicked == optionA)
+            selectedIndex = 0;
+        else if (clicked == optionB)
+            selectedIndex = 1;
+        else if (clicked == optionC)
+            selectedIndex = 2;
+        else if (clicked == optionD)
+            selectedIndex = 3;
 
-        int newScore = currentUser.getScore() + change;
-        if (newScore < 0)
-            newScore = 0;
-        currentUser.setScore(newScore);
+        if (selectedIndex == -1)
+            return;
 
-        try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement("UPDATE users SET score = ? WHERE id = ?")) {
-            stmt.setInt(1, newScore);
-            stmt.setInt(2, currentUser.getId());
-            stmt.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // Өмнөх оноог хадгалах
+        int oldScore = score;
 
-        if (correct) {
-            questionArea.setText("✅ Зөв хариуллаа! +1 оноо");
-            clicked.setStyle("-fx-background-color: #2ECC71; -fx-text-fill: white;");
+        if (selectedIndex == correctAnswers[currentQuestionIndex]) {
+            score++;
+            questionArea.setText("✅ Зөв хариулт! +1 оноо\n" + questions[currentQuestionIndex]);
+            showCorrectAnswer(selectedIndex);
         } else {
-            questionArea.setText(" Буруу хариуллаа! -1 оноо. Зөв хариулт: " + currentQuestion.getCorrectOption());
-            clicked.setStyle("-fx-background-color: #E74C3C; -fx-text-fill: white;");
+            score--;
+            questionArea.setText("❌ Буруу хариулт! -1 оноо\nЗөв хариулт: "
+                    + options[currentQuestionIndex][correctAnswers[currentQuestionIndex]]);
+            showWrongAnswer(selectedIndex);
         }
-        disableOptions(true);
-        updateUI();
-        updateKing();
 
-        new javafx.animation.Timeline(
-                new javafx.animation.KeyFrame(Duration.seconds(1.5), e -> {
-                    resetButtonStyles();
-                    spinWheel();
-                })).play();
+        isAnswered = true;
+        isNewUser = false;
+        updateScoreAndRank();
     }
 
-    private void updateUI() {
-        scoreLabel.setText("⭐ " + currentUser.getScore());
-        rankLabel.setText("🏆 Rank: " + getRank());
-        updateKing();
-    }
-
-    private int getRank() {
-        try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(
-                        "SELECT COUNT(*) + 1 as rank_pos FROM users WHERE score > (SELECT score FROM users WHERE id = ?)")) {
-            stmt.setInt(1, currentUser.getId());
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next())
-                return rs.getInt("rank_pos");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    private void updateKing() {
-        try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(
-                        "SELECT username, score FROM users ORDER BY score DESC LIMIT 1")) {
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                String kingName = rs.getString("username");
-                int kingScore = rs.getInt("score");
-                if (kingName.equals(currentUser.getUsername())) {
-                    kingLabel.setText(" ТА МОНГОЛЫН ХААН! (Оноо: " + kingScore + ")");
-                    kingLabel.setStyle("-fx-text-fill: gold; -fx-font-size: 18px; -fx-font-weight: bold;");
-                } else {
-                    kingLabel.setText(" Хаан: " + kingName + " (Оноо: " + kingScore + ")");
-                    kingLabel.setStyle("-fx-text-fill: #FFD700; -fx-font-size: 16px;");
-                }
+    private void showCorrectAnswer(int selectedIndex) {
+        Button[] buttons = { optionA, optionB, optionC, optionD };
+        for (int i = 0; i < buttons.length; i++) {
+            if (i == selectedIndex) {
+                buttons[i].setStyle(
+                        "-fx-background-color: #4caf50; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #2e7d32; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
-    private void disableOptions(boolean disable) {
-        optionA.setDisable(disable);
-        optionB.setDisable(disable);
-        optionC.setDisable(disable);
-        optionD.setDisable(disable);
+    private void showWrongAnswer(int selectedIndex) {
+        Button[] buttons = { optionA, optionB, optionC, optionD };
+        int correctIndex = correctAnswers[currentQuestionIndex];
+
+        for (int i = 0; i < buttons.length; i++) {
+            if (i == selectedIndex) {
+                buttons[i].setStyle(
+                        "-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #c62828; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
+            } else if (i == correctIndex) {
+                buttons[i].setStyle(
+                        "-fx-background-color: #4caf50; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #2e7d32; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
+            }
+        }
     }
 
-    private void resetButtonStyles() {
-        optionA.setStyle("");
-        optionB.setStyle("");
-        optionC.setStyle("");
-        optionD.setStyle("");
+    private void updateScoreAndRank() {
+        // Оноо гэж нэрлэх
+        scoreLabel.setText("⭐ Оноо: " + score);
+
+        // Ранкын тооцоо
+        if (score >= 10)
+            rank = 1;
+        else if (score >= 7)
+            rank = 2;
+        else if (score >= 4)
+            rank = 3;
+        else if (score >= 1)
+            rank = 4;
+        else
+            rank = 5;
+
+        // Ранк гэдгийг Оноо гэж солих
+        rankLabel.setText("🏆 Ранк: " + rank);
+
+        String rankName;
+        switch (rank) {
+            case 1:
+                rankName = "АЛТАН 🥇";
+                break;
+            case 2:
+                rankName = "МӨНГӨН 🥈";
+                break;
+            case 3:
+                rankName = "ХҮРЭЛ 🥉";
+                break;
+            case 4:
+                rankName = "ХҮРЭЛЗЭМ ⭐";
+                break;
+            case 5:
+                rankName = "ГЭРЭЛТЭЙ 🌟";
+                break;
+            default:
+                rankName = "ШИНЭ";
+        }
+
+        kingLabel.setText("👑 " + currentUsername + " - " + rankName);
+    }
+
+    private void resetButtons() {
+        optionA.setStyle(
+                "-fx-background-color: #c8e6c9; -fx-text-fill: #1b5e20; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #388e3c; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
+        optionB.setStyle(
+                "-fx-background-color: #fff9c4; -fx-text-fill: #f57f17; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #f9a825; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
+        optionC.setStyle(
+                "-fx-background-color: #b3e5fc; -fx-text-fill: #01579b; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #0288d1; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
+        optionD.setStyle(
+                "-fx-background-color: #ffccbc; -fx-text-fill: #bf360c; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12 40; -fx-background-radius: 12; -fx-border-color: #d84315; -fx-border-radius: 12; -fx-border-width: 2; -fx-cursor: hand;");
     }
 
     @FXML
@@ -255,13 +370,12 @@ public class GameController {
 
     @FXML
     private void openHelp() {
-        try {
-            Stage helpStage = new Stage();
-            helpStage.setTitle("Тусламж");
-            helpStage.setScene(new Scene(new Label("Тоглоомын заавар..."), 300, 200));
-            helpStage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        questionArea.setText("❓ ТУСЛАМЖ\n\n"
+                + "🎡 Хүрд эргүүлэн асуулт сонгоно уу!\n"
+                + "✅ Зөв хариулт → +1 оноо\n"
+                + "❌ Буруу хариулт → -1 оноо\n"
+                + "🏆 Ранк нь онооноос хамаарна.\n"
+                + "👑 Өндөр зэрэглэлд хүрэхийг хүсье!");
     }
+
 }

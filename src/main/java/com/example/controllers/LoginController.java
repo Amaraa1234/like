@@ -1,7 +1,5 @@
 package com.example.controllers;
 
-import com.example.database.DatabaseConnection;
-import com.example.models.User;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -10,17 +8,17 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import org.mindrot.jbcrypt.BCrypt;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.io.IOException;
 
 public class LoginController {
+
     @FXML
     private TextField usernameField;
+
     @FXML
     private PasswordField passwordField;
+
     @FXML
     private Label messageLabel;
 
@@ -31,80 +29,54 @@ public class LoginController {
     }
 
     @FXML
-    public void handleLogin() {
-        String username = usernameField.getText();
-        String pass = passwordField.getText();
-        if (username.isEmpty() || pass.isEmpty()) {
-            messageLabel.setText("Бүх талбарыг бөглөнө үү.");
+    private void handleLogin() {
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText().trim();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            messageLabel.setText("⚠️ Хэрэглэгчийн нэр болон нууц үгээ оруулна уу!");
             return;
         }
-        try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users WHERE username = ?")) {
-            stmt.setString(1, username);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                String hashed = rs.getString("password_hash");
-                if (BCrypt.checkpw(pass, hashed)) {
-                    User loggedInUser = new User(rs.getInt("id"), rs.getString("username"), hashed, rs.getInt("score"));
-                    loadGameScene(loggedInUser);
-                } else {
-                    messageLabel.setText("Нууц үг буруу!");
-                }
-            } else {
-                messageLabel.setText("Хэрэглэгч олдсонгүй!");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            messageLabel.setText("Алдаа гарлаа: " + e.getMessage());
-        }
+
+        loadGameScene(username);
     }
 
     @FXML
-    public void handleRegister() {
-        String username = usernameField.getText();
-        String pass = passwordField.getText();
-        if (username.isEmpty() || pass.isEmpty()) {
-            messageLabel.setText("Бүх талбарыг бөглөнө үү.");
+    private void handleRegister() {
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText().trim();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            messageLabel.setText("⚠️ Хэрэглэгчийн нэр болон нууц үгээ оруулна уу!");
             return;
         }
-        try (Connection conn = DatabaseConnection.getConnection()) {
-            try (PreparedStatement checkStmt = conn.prepareStatement("SELECT id FROM users WHERE username = ?")) {
-                checkStmt.setString(1, username);
-                if (checkStmt.executeQuery().next()) {
-                    messageLabel.setText("Энэ нэр аль хэдийн бүртгэгдсэн!");
-                    return;
-                }
-            }
-            String hashed = BCrypt.hashpw(pass, BCrypt.gensalt());
-            try (PreparedStatement insertStmt = conn
-                    .prepareStatement("INSERT INTO users (username, password_hash, score) VALUES (?, ?, 0)")) {
-                insertStmt.setString(1, username);
-                insertStmt.setString(2, hashed);
-                insertStmt.executeUpdate();
-                messageLabel.setText("✅ Амжилттай бүртгэгдлээ. Нэвтрэнэ үү!");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            messageLabel.setText("Алдаа гарлаа: " + e.getMessage());
-        }
+
+        messageLabel.setText("✅ Бүртгэл амжилттай! Нэвтрэх товч дарна уу.");
     }
 
-    private void loadGameScene(User user) {
+    /**
+     * Тоглоомын дэлгэц рүү шилжих
+     */
+    private void loadGameScene(String username) { // ← String параметртэй
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/game.fxml"));
             Parent root = loader.load();
-            GameController controller = loader.getController();
-            controller.setUser(user);
-            controller.setStage(stage);
-            // ✅ ЭНД НЭМЭХ
-            controller.initGame(); // <-- ЭНЭ МӨР НЭМЭХ
 
-            stage.setScene(new Scene(root, 900, 700));
-            stage.setTitle("🎡 Асуултын Хүрд");
+            GameController controller = loader.getController();
+
+            // Хэрэглэгчийн нэрийг дамжуулах (setUser биш setUsername)
+            controller.setUsername(username); // ← ЭНД АНХААР!
+            controller.setStage(stage);
+            controller.initGame();
+
+            Scene scene = new Scene(root, 900, 750);
+            stage.setScene(scene);
+            stage.setTitle("🎡 Асуултын Хүрд - " + username);
             stage.show();
-        } catch (Exception e) {
+
+        } catch (IOException e) {
             e.printStackTrace();
+            messageLabel.setText("❌ Тоглоомын дэлгэц ачааллаж чадсангүй!");
         }
     }
-
 }
