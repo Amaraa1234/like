@@ -2,17 +2,18 @@ package com.example.models;
 
 public class Question {
     private int id;
-    private String questionText;
+    private String text;
     private String optionA;
     private String optionB;
     private String optionC;
     private String optionD;
-    private String correctOption;
+    private char correctOption;
 
-    public Question(int id, String questionText, String optionA, String optionB, String optionC, String optionD,
-            String correctOption) {
+    // 7 Параметртэй Constructor (Асуултын сангаас уншихад зориулав)
+    public Question(int id, String text, String optionA, String optionB, String optionC, String optionD,
+            char correctOption) {
         this.id = id;
-        this.questionText = questionText;
+        this.text = text;
         this.optionA = optionA;
         this.optionB = optionB;
         this.optionC = optionC;
@@ -20,12 +21,13 @@ public class Question {
         this.correctOption = correctOption;
     }
 
+    // Getters
     public int getId() {
         return id;
     }
 
-    public String getQuestionText() {
-        return questionText;
+    public String getText() {
+        return text;
     }
 
     public String getOptionA() {
@@ -44,7 +46,7 @@ public class Question {
         return optionD;
     }
 
-    public String getCorrectOption() {
+    public char getCorrectOption() {
         return correctOption;
     }
 }

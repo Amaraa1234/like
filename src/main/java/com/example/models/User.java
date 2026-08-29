@@ -3,23 +3,15 @@ package com.example.models;
 public class User {
     private int id;
     private String username;
-    private int totalScore;
-    private int lives;
-    private int coins;
+    private String passwordHash;
+    private int score;
 
-    public User(int id, String username, int totalScore, int lives, int coins) {
+    // Энэ constructor-г нэмэх (ID, Username, PasswordHash, Score)
+    public User(int id, String username, String passwordHash, int score) {
         this.id = id;
         this.username = username;
-        this.totalScore = totalScore;
-        this.lives = lives;
-        this.coins = coins;
-    }
-
-    public User(String username, int totalScore, int lives, int coins) {
-        this.username = username;
-        this.totalScore = totalScore;
-        this.lives = lives;
-        this.coins = coins;
+        this.passwordHash = passwordHash;
+        this.score = score;
     }
 
     // Getters and Setters
@@ -39,38 +31,19 @@ public class User {
         this.username = username;
     }
 
-    public int getTotalScore() {
-        return totalScore;
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setTotalScore(int totalScore) {
-        this.totalScore = totalScore;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
-    public int getLives() {
-        return lives;
+    public int getScore() {
+        return score;
     }
 
-    public void setLives(int lives) {
-        this.lives = lives;
+    public void setScore(int score) {
+        this.score = score;
     }
-
-    public int getCoins() {
-        return coins;
-    }
-
-    public void setCoins(int coins) {
-        this.coins = coins;
-    }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "username='" + username + '\'' +
-                ", totalScore=" + totalScore +
-                ", lives=" + lives +
-                ", coins=" + coins +
-                '}';
-    }
-
 }
