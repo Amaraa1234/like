@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.controllers.LoginController"
+            styleClass="root"
+            stylesheets="@css/style.css">
+    <VBox spacing="20" alignment="CENTER" styleClass="main-panel" layoutX="50" layoutY="50" prefWidth="400" prefHeight="300">
+        <Label text="🎡 Тавтай морил" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2980B9;"/>
+        <TextField fx:id="usernameField" promptText="Хэрэглэгчийн нэр" styleClass="input-field"/>
+        <PasswordField fx:id="passwordField" promptText="Нууц үг" styleClass="input-field"/>
+        <Label fx:id="messageLabel" style="-fx-text-fill: #E74C3C;"/>
+        <HBox spacing="20" alignment="CENTER">
+            <Button text="Нэвтрэх" styleClass="bright-button" onAction="#handleLogin"/>
+            <Button text="Бүртгүүлэх" styleClass="bright-button" onAction="#handleRegister" style="-fx-background-color: #95A5A6;"/>
+        </HBox>
+    </VBox>
+</AnchorPane>

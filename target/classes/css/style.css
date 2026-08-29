@@ -1,0 +1,57 @@
+.root { 
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    -fx-font-family: 'Segoe UI', 'Roboto', sans-serif;
+    -fx-background-color: #F4F9F9; 
+}
+.main-panel {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 30px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 20, 0, 0, 10);
+    -fx-padding: 25px;
+}
+.input-field {
+    -fx-padding: 12px;
+    -fx-background-radius: 25px;
+    -fx-border-color: #E0E7E9;
+    -fx-border-radius: 25px;
+    -fx-font-size: 14px;
+    -fx-background-color: #F8FAFC;
+}
+.bright-button {
+    -fx-background-color: linear-gradient(to right, #6DD5FA, #2980B9);
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+    -fx-background-radius: 50px;
+    -fx-padding: 12px 30px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(41, 128, 185, 0.3), 10, 0, 0, 5);
+}
+.bright-button:hover { 
+    -fx-scale-x: 1.02; 
+    -fx-scale-y: 1.02; 
+}
+.wheel-container {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 400px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 25, 0, 0, 15);
+}
+.option-button {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #CBD5E1;
+    -fx-border-width: 2px;
+    -fx-border-radius: 15px;
+    -fx-background-radius: 15px;
+    -fx-font-size: 15px;
+    -fx-padding: 12px;
+    -fx-cursor: hand;
+}
+.option-button:hover { 
+    -fx-border-color: #6DD5FA; 
+    -fx-background-color: #EFF6FF; 
+}
+.king-title { 
+    -fx-text-fill: #F1C40F; 
+    -fx-font-size: 20px; 
+    -fx-font-weight: bold; 
+}
