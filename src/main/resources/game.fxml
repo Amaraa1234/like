@@ -1,11 +1,23 @@
-.pulse-animation:hover {
-    -fx-scale-x: 1.05;
-    -fx-scale-y: 1.05;
-    -fx-transition: all 0.3s ease;
-}
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
+import javafx.scene.Node;
 
-/* Эсвэл Java кодоор анимейшн хийх */
-.animated-node {
-    -fx-scale-x: 1;
-    -fx-scale-y: 1;
+public void pulseAnimation(Node node) {
+    Timeline timeline = new Timeline(
+        new KeyFrame(Duration.ZERO, e -> {
+            node.setScaleX(1);
+            node.setScaleY(1);
+        }),
+        new KeyFrame(Duration.millis(250), e -> {
+            node.setScaleX(1.1);
+            node.setScaleY(1.1);
+        }),
+        new KeyFrame(Duration.millis(500), e -> {
+            node.setScaleX(1);
+            node.setScaleY(1);
+        })
+    );
+    timeline.setCycleCount(2); // 2 удаа давтах
+    timeline.play();
 }
