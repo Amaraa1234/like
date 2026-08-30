@@ -10,6 +10,7 @@ import com.example.utils.UserSession;
 import javafx.animation.AnimationTimer;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
@@ -17,6 +18,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.ArcType;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
 
 import java.util.List;
 import java.util.Random;
@@ -74,7 +78,7 @@ public class GameController {
     }
 
     /**
-     * Хүрд зурах хэсэг
+     * Хүрд зурах хэсэг (Зөв координатын систем болон тод тексттэй)
      */
     private void drawWheel() {
         GraphicsContext gc = wheelCanvas.getGraphicsContext2D();
@@ -102,6 +106,7 @@ public class GameController {
         for (int i = 0; i < sections; i++) {
             double startAngle = i * angleStep + currentAngle;
 
+            // 1. Сектор будах
             gc.setFill(colors[i % colors.length]);
             gc.fillArc(
                     centerX - radius, centerY - radius,
@@ -109,19 +114,46 @@ public class GameController {
                     startAngle, angleStep,
                     ArcType.ROUND);
 
+            // 2. Сектор хоорондын тусгаарлагч шугам
+            gc.setStroke(Color.BLACK);
+            gc.setLineWidth(1.5);
+            gc.strokeArc(
+                    centerX - radius, centerY - radius,
+                    radius * 2, radius * 2,
+                    startAngle, angleStep,
+                    ArcType.ROUND);
+
+            // 3. Тоо / Текст зурах хэсэг
+            double midAngleDeg = startAngle + angleStep / 2.0;
+            // JavaFX Y-тэнхлэг доошоо чиглэдэг тул сайн тааруулахын тулд хасах заагч
+            // ашиглана
+            double midAngleRad = Math.toRadians(-midAngleDeg);
+
+            double textX = centerX + (radius * 0.65) * Math.cos(midAngleRad);
+            double textY = centerY + (radius * 0.65) * Math.sin(midAngleRad);
+
+            gc.save();
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.setTextBaseline(VPos.CENTER);
+            gc.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+
+            // Хар хүрээ (Тоог илүү тод болгоно)
+            gc.setLineWidth(3);
+            gc.setStroke(Color.BLACK);
+            gc.strokeText(labels[i], textX, textY);
+
+            // Цагаан дотор тал
             gc.setFill(Color.WHITE);
-            gc.setFont(javafx.scene.text.Font.font(18));
-            double midAngle = Math.toRadians(startAngle + angleStep / 2);
-            double textX = centerX + radius * 0.65 * Math.cos(midAngle);
-            double textY = centerY + radius * 0.65 * Math.sin(midAngle);
-            gc.fillText(labels[i], textX - 8, textY + 6);
+            gc.fillText(labels[i], textX, textY);
+            gc.restore();
         }
 
-        // Хүрдний төв ба зүү
+        // Хүрдний гадна хүрээ
         gc.setStroke(Color.BLACK);
         gc.setLineWidth(2);
         gc.strokeOval(centerX - radius, centerY - radius, radius * 2, radius * 2);
 
+        // Хүрдний төв болон заагч зүү
         gc.setFill(Color.WHITE);
         gc.fillOval(centerX - 15, centerY - 15, 30, 30);
         gc.strokeOval(centerX - 15, centerY - 15, 30, 30);
@@ -134,7 +166,7 @@ public class GameController {
 
     @FXML
     private void spinWheel() {
-        if (isSpinning || questionList.isEmpty())
+        if (isSpinning || questionList == null || questionList.isEmpty())
             return;
 
         isSpinning = true;
@@ -214,18 +246,24 @@ public class GameController {
             return;
 
         if (selectedOption == currentQuestion.correctOption()) {
-            currentUser.setScore(currentUser.getScore() + 1);
+            if (currentUser != null) {
+                currentUser.setScore(currentUser.getScore() + 1);
+            }
             questionArea.setText("✅ Зөв хариуллаа! (+1 оноо)\n" + currentQuestion.text());
             highlightButton(clicked, "option-correct");
         } else {
-            currentUser.setScore(Math.max(0, currentUser.getScore() - 1));
+            if (currentUser != null) {
+                currentUser.setScore(Math.max(0, currentUser.getScore() - 1));
+            }
             questionArea.setText("❌ Буруу хариуллаа! (-1 оноо)\nЗөв хариулт: " + currentQuestion.correctOption());
             highlightButton(clicked, "option-wrong");
             highlightCorrectOption(currentQuestion.correctOption());
         }
 
         // Өгөгдлийн санд одоогийн оноог хадгалах
-        userDAO.updateScore(currentUser.getId(), currentUser.getScore());
+        if (currentUser != null) {
+            userDAO.updateScore(currentUser.getId(), currentUser.getScore());
+        }
 
         isAnswered = true;
         updateScoreAndRank();

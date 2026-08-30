@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
@@ -8,20 +9,13 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane styleClass="root" stylesheets="@css/style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.controllers.LoginController">
+<AnchorPane prefHeight="550.0" prefWidth="650.0" styleClass="root" stylesheets="@/css/style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.controllers.LoginController">
     
-    <VBox alignment="CENTER" 
-          layoutX="0" 
-          layoutY="0" 
-          prefHeight="500.0" 
-          prefWidth="600.0" 
-          spacing="25" 
-          styleClass="login-panel"
-          AnchorPane.bottomAnchor="0" 
-          AnchorPane.leftAnchor="0" 
-          AnchorPane.rightAnchor="0" 
-          AnchorPane.topAnchor="0">
-        
+    <VBox alignment="CENTER" spacing="20.0" styleClass="login-panel" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <padding>
+            <Insets bottom="30.0" left="40.0" right="40.0" top="30.0" />
+        </padding>
+
         <!-- Гарчиг -->
         <Label styleClass="login-title" text="🎡 Тавтай морил" />
         
@@ -29,25 +23,17 @@
         <Label styleClass="login-subtitle" text="Хүрдний тоглоомонд нэвтрэх" />
         
         <!-- Хэрэглэгчийн нэр -->
-        <TextField fx:id="usernameField" 
-                   promptText="👤 Хэрэглэгчийн нэр" 
-                   styleClass="input-field" 
-                   prefHeight="45" 
-                   prefWidth="380" />
+        <TextField fx:id="usernameField" maxWidth="380.0" prefHeight="45.0" promptText="👤 Хэрэглэгчийн нэр" styleClass="input-field" />
         
         <!-- Нууц үг -->
-        <PasswordField fx:id="passwordField" 
-                       promptText="🔒 Нууц үг" 
-                       styleClass="input-field" 
-                       prefHeight="45" 
-                       prefWidth="380" />
+        <PasswordField fx:id="passwordField" maxWidth="380.0" prefHeight="45.0" promptText="🔒 Нууц үг" styleClass="input-field" />
         
         <!-- Алдааны мессеж -->
-        <Label fx:id="messageLabel" styleClass="message-label" />
+        <Label fx:id="messageLabel" styleClass="message-label" wrapText="true" />
         
         <!-- Товчнууд -->
-        <HBox alignment="CENTER" spacing="25" style="-fx-padding: 10 0 0 0;">
-            <Button onAction="#handleLogin" styleClass="login-button" text="🔑 Нэвтрэх" />
+        <HBox alignment="CENTER" spacing="20.0">
+            <Button defaultButton="true" onAction="#handleLogin" styleClass="login-button" text="🔑 Нэвтрэх" />
             <Button onAction="#handleRegister" styleClass="register-button" text="📝 Бүртгүүлэх" />
         </HBox>
         

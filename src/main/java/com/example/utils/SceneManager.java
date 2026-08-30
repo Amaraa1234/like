@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URL;
 
 public class SceneManager {
 
@@ -17,9 +18,6 @@ public class SceneManager {
     private SceneManager() {
     }
 
-    /**
-     * Програм эхлэхэд үндсэн Stage-ийг тохируулна (App.java-аас дуудна)
-     */
     public static void setPrimaryStage(Stage stage) {
         primaryStage = stage;
     }
@@ -28,12 +26,6 @@ public class SceneManager {
         return primaryStage;
     }
 
-    /**
-     * Дэлгэц солих үндсэн метод
-     * 
-     * @param fxmlPath FXML файлын зам (жишээ нь: "/login.fxml", "/game.fxml")
-     * @param title    Цонхны гарчиг
-     */
     public static void switchScene(String fxmlPath, String title) {
         if (primaryStage == null) {
             logger.error(
@@ -42,13 +34,20 @@ public class SceneManager {
         }
 
         try {
-            FXMLLoader loader = new FXMLLoader(SceneManager.class.getResource(fxmlPath));
+            // 1. FXML файлын URL авч, null эсэхийг тусгайлан шалгах
+            URL resource = SceneManager.class.getResource(fxmlPath);
+            if (resource == null) {
+                logger.error("❌ FXML файл олдсонгүй! Файлын зам буруу байна: {}", fxmlPath);
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(resource);
             Parent root = loader.load();
 
             Scene scene = new Scene(root, 900, 750);
 
             // CSS файл байгаа бол автоматаар уншуулна
-            var cssResource = SceneManager.class.getResource("/css/style.css");
+            URL cssResource = SceneManager.class.getResource("/css/style.css");
             if (cssResource != null) {
                 scene.getStylesheets().add(cssResource.toExternalForm());
             }
@@ -62,6 +61,10 @@ public class SceneManager {
 
         } catch (IOException e) {
             logger.error("Дэлгэц ачааллахад алдаа гарлаа: " + fxmlPath, e);
+        } catch (Exception e) {
+            // FXML доторх контроллерт (GameController) гарсан бусад Exception-ийг барьж
+            // авах
+            logger.error("Дэлгэцийн контроллер ачааллахад алдаа гарлаа: " + fxmlPath, e);
         }
     }
 }
